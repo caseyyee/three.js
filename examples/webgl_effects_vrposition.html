@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - native vr demo</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			.menu {
+				position: fixed;
+				bottom: 20px;
+				right: 20px;
+			}
+
+			.button {
+				display: inline-block;
+				padding: 8px;
+				color: #FFF;
+				background-color: #555;
+			}
+
+			.button.enabled {
+				background-color: rgb(18, 36, 70);
+			}
+
+			.button:hover {
+				cursor: pointer;
+				background-color: rgb(18, 36, 70);
+			}
+
+			.button.error {
+				pointer-events: none;
+				background-color: red;
+			}
+
+		</style>
+	</head>
+	<body>
+		<div class="menu">
+			<div class="button full-screen">Start VR Mode</div>
+		</div>
+
+		<script src="../build/three.min.js"></script>
+		<script src="js/controls/MouseControls.js"></script>
+		<script src="js/effects/VREffect.js"></script>
+		<script src="js/controls/VRControls.js"></script>
+		<script src="js/libs/stats.min.js"></script>
+
+		<script>
+
+			var container, stats;
+			var camera, scene, renderer;
+			var vrEffect;
+			var vrControls;
+
+
+			init();
+			animate();
+
+			function init() {
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 1, 10000 );
+				//camera.position.set(0,-100,0);
+
+				scene = new THREE.Scene();
+
+				var light = new THREE.DirectionalLight( 0xffffff, 1 );
+				light.position.set( 1, 1, 1 ).normalize();
+				scene.add( light );
+
+
+				var object = new THREE.Mesh( new THREE.BoxGeometry( 1, 1, 1 ),
+					new THREE.MeshLambertMaterial( { color: 0xff0000 } ) );
+				object.position.set(0,0,-1);
+				object.rotation.y = 45 * (Math.PI/180);
+				object.scale.set(0.5,0.5,0.5);
+				scene.add(object);
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setClearColor( 0xf0f0f0 );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.sortObjects = false;
+				container.appendChild( renderer.domElement );
+
+				vrControls = new THREE.VRControls(camera);
+
+				vrControls.zeroSensor();
+
+				vrEffect = new THREE.VREffect(renderer, VREffectLoaded);
+
+				function VREffectLoaded(error) {
+					if (error) {
+						fullScreenButton.innerHTML = error;
+						fullScreenButton.classList.add('error');
+					}
+				}
+
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				var fullScreenButton = document.querySelector( '.full-screen' );
+
+				fullScreenButton.onclick = function() {
+					vrEffect.setFullScreen( true );
+				};
+
+			}
+
+			function onWindowResize() {
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				vrEffect.setSize( window.innerWidth, window.innerHeight );
+			}
+
+			function animate() {
+				requestAnimationFrame( animate );
+
+				render();
+				stats.update();
+			}
+
+			function render() {
+				vrControls.update();
+				vrEffect.render( scene, camera );
+			}
+
+		</script>
+	</body>
+</html>
